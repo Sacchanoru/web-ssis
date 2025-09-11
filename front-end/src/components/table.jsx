@@ -92,12 +92,12 @@ function Table() {
         {/* Table Head */}
         <thead className="bg-blue-300 text-white">
           <tr>
-            <th>Student ID</th>
-            <th className="w-[150px]">First Name</th>
-            <th>Last Name</th>
-            <th className="w-[250px]">Course</th>
-            <th>Year</th>
-            <th>Gender</th>
+            <th>Student ID <i className="pi pi-sort-down-fill"></i></th>
+            <th className="w-[150px]">First Name <i className="pi pi-sort-down"></i></th>
+            <th>Last Name <i className="pi pi-sort-down"></i></th>
+            <th className="w-[250px]">Course <i className="pi pi-sort-down"></i></th>
+            <th>Year <i className="pi pi-sort-down"></i></th>
+            <th>Gender <i className="pi pi-sort-down"></i></th>
             <th></th>
           </tr>
         </thead>
