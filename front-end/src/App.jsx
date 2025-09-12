@@ -8,10 +8,12 @@ import CollegeTable from './components/tables/college_table'
 import Card from "./components/card";
 import NavBar from "./components/navbar";
 import Pagination from "./components/pagination";
+import SidebarLayout from "./components/sidebar";
 
 function App() {
   const [activeTab, setActiveTab] = useState("Student");
   return (
+  <SidebarLayout>
     <div className="p-8">
       <Card title="Web Student Information System">
         <div className="mb-4">
@@ -25,6 +27,7 @@ function App() {
         </div>
       </Card>
     </div>
+  </SidebarLayout>
   );
 }
 
