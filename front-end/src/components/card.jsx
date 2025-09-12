@@ -9,7 +9,7 @@ function Card({ title, children }) {
           {title}
         </h2>
       )}
-      <div className="max-h-[1280px]"> 
+      <div className="max-h-[1280px] w-[960px]"> 
         {children}
       </div>
     </div>
