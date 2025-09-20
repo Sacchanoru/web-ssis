@@ -36,8 +36,6 @@ function StudentTable() {
     setIsFormOpen(false);
   };
 
-
-  //<AddButton label="Student" onClick={() => setIsFormOpen(true)} />
   return (
     <div>
       <div className="flex justify-end mb-2">
