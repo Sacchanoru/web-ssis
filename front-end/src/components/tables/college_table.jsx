@@ -29,7 +29,7 @@ function CollegeTable() {
   return (
     <div className="overflow-x-auto rounded-box border border-base-content/5 bg-white text-black">
       <table className="table min-w-auto">
-        {/* Table Head */}
+
         <thead className="bg-blue-300 text-white">
           <tr>
             <th>College Code <i className="pi pi-sort-down-fill"></i></th>
@@ -38,7 +38,7 @@ function CollegeTable() {
           </tr>
         </thead>
 
-        {/* Table Body */}
+
         <tbody className="text-gray-700">
           {colleges.map((college) => (
             <tr key={college.code} className="hover:bg-blue-100">

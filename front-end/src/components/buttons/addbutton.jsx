@@ -1,8 +1,8 @@
 import React from 'react'
 
-function AddButton({ label }) {
+function AddButton({ label, onClick }) {
     return(
-        <button className="btn btn-outline btn-accent">
+        <button className="btn bg-blue-300 text-white border-none" onClick = {onClick}>
             <i className="pi pi-plus"></i> Add {label}
             </button>
     );  
