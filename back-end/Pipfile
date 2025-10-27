@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 flask = "*"
 flask-cors = "*"
+sqlalchemy = "*"
+psycopg2-binary = "*"
+flask-sqlalchemy = "*"
+pyjwt = "*"
 
 [dev-packages]
 pytest = "*"
