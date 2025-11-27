@@ -33,3 +33,23 @@ def edit_student(student_id):
 @student_bp.route("/exists/<string:student_id>", methods=["GET"])
 def check_student_exists(student_id):
     return StudentController.check_student_exists(student_id)
+
+@student_bp.route("/<string:student_id>/details", methods=["GET"])
+def get_student_with_image(student_id):
+    """Get full student details with image"""
+    return StudentController.get_student_with_image(student_id)
+
+@student_bp.route("/<string:student_id>/image", methods=["POST"])
+def upload_student_image(student_id):
+    """Upload or update student image"""
+    return StudentController.upload_student_image(student_id)
+
+@student_bp.route("/<string:student_id>/image", methods=["GET"])
+def get_student_image(student_id):
+    """Get student image info"""
+    return StudentController.get_student_image(student_id)
+
+@student_bp.route("/<string:student_id>/image", methods=["DELETE"])
+def delete_student_image(student_id):
+    """Delete student image only"""
+    return StudentController.delete_student_image_only(student_id)

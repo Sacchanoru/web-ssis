@@ -10,6 +10,10 @@ sqlalchemy = "*"
 psycopg2-binary = "*"
 flask-sqlalchemy = "*"
 pyjwt = "*"
+supabase = "*"
+cloudinary = "*"
+requests = "*"
+pillow = "*"
 
 [dev-packages]
 pytest = "*"

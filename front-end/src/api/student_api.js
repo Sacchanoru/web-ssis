@@ -30,7 +30,6 @@ export const getStudents = async (
   }
 };
 
-// add new stud
 export const addStudent = async (student) => {
   try {
     const response = await axios.post(`${API_BASE}/students/`, student);
@@ -41,7 +40,6 @@ export const addStudent = async (student) => {
   }
 };
 
-// delete student
 export const deleteStudent = async (id) => {
   try {
     const response = await axios.delete(`${API_BASE}/students/${id}`);
@@ -52,7 +50,6 @@ export const deleteStudent = async (id) => {
   }
 };
 
-// edit student
 export const editStudent = async (id, newData) => {
   try {
     const response = await axios.put(`${API_BASE}/students/${id}`, newData);
@@ -63,13 +60,68 @@ export const editStudent = async (id, newData) => {
   }
 };
 
-// check if student alrdy exists
 export const studentExists = async (id) => {
   try {
     const res = await axios.get(`${API_BASE}/students/exists/${id}`);
     return res.data.exists;
   } catch (err) {
     console.error("Error checking student existence:", err);
+    throw err;
+  }
+};
+
+// === NEW IMAGE FUNCTIONS ===
+
+export const getStudentWithImage = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE}/students/${id}/details`);
+    return response.data;
+  } catch (err) {
+    console.error("Error getting student details:", err);
+    throw err;
+  }
+};
+
+export const uploadStudentImage = async (id, imageFile) => {
+  try {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+
+    const response = await axios.post(
+      `${API_BASE}/students/${id}/image`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (err) {
+    console.error("Error uploading student image:", err);
+    throw err;
+  }
+};
+
+export const getStudentImage = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE}/students/${id}/image`);
+    return response.data;
+  } catch (err) {
+    if (err.response?.status === 404) {
+      return null; // No image found
+    }
+    console.error("Error getting student image:", err);
+    throw err;
+  }
+};
+
+export const deleteStudentImage = async (id) => {
+  try {
+    const response = await axios.delete(`${API_BASE}/students/${id}/image`);
+    return response.data;
+  } catch (err) {
+    console.error("Error deleting student image:", err);
     throw err;
   }
 };

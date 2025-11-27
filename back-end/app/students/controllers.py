@@ -1,5 +1,6 @@
 from flask import jsonify, request
 from app.students.service_repo import StudentService
+from app.students.image_service import ImageService
 
 class StudentController:
     @staticmethod
@@ -35,6 +36,7 @@ class StudentController:
 
     @staticmethod
     def delete_student(student_id: str):
+        ImageService.delete_student_image(student_id)  
         student = StudentService.delete_student(student_id)
         if not student:
             return jsonify({"error": "Student not found"}), 400
@@ -55,3 +57,91 @@ class StudentController:
     def check_student_exists(student_id: str):
         exists = StudentService.student_exists(student_id)
         return jsonify({"exists": exists}), 200
+    
+    @staticmethod
+    def upload_student_image(student_id: str):
+        try:
+            print(f"Student ID captured: {repr(student_id)}")
+            if not StudentService.student_exists(student_id):
+                return jsonify({"error": "Student not found"}), 404
+
+            if 'image' not in request.files:
+                return jsonify({"error": "No image file provided"}), 400
+            
+            file = request.files['image']
+            
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+                return jsonify({"error": "Invalid file type. Allowed: png, jpg, jpeg, gif"}), 400
+
+            result = ImageService.upload_student_image(student_id, file)
+            return jsonify(result), 200
+            
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    @staticmethod
+    def get_student_image(student_id: str):
+        try:
+            image_info = ImageService.get_student_image(student_id)
+            
+            if not image_info:
+                return jsonify({"message": "No image found for this student"}), 404
+            
+            return jsonify(image_info), 200
+            
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    @staticmethod
+    def delete_student_image_only(student_id: str):
+        try:
+            success = ImageService.delete_student_image(student_id)
+            
+            if success:
+                return jsonify({"message": "Image deleted successfully"}), 200
+            else:
+                return jsonify({"error": "Failed to delete image"}), 500
+                
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    @staticmethod
+    def get_student_with_image(student_id: str):
+        try:
+            from app.database import get_db
+            db = get_db()
+            cur = db.cursor()
+            
+            cur.execute("""
+                SELECT id, firstname, lastname, course, year, gender
+                FROM student
+                WHERE id = %s
+            """, (student_id,))
+            
+            student_data = cur.fetchone()
+            cur.close()
+            
+            if not student_data:
+                return jsonify({"error": "Student not found"}), 404
+            
+            student = {
+                "id": student_data[0],
+                "firstname": student_data[1],
+                "lastname": student_data[2],
+                "course": student_data[3],
+                "year": student_data[4],
+                "gender": student_data[5]
+            }
+            
+            # Attach image info
+            image_info = ImageService.get_student_image(student_id)
+            student["image"] = image_info
+            
+            return jsonify(student), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500

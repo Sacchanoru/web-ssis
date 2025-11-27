@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from "react";
 import "primeicons/primeicons.css";
-import { getStudents, deleteStudent } from "../../api/student_api";
+import {
+  getStudents,
+  deleteStudent,
+  getStudentImage,
+} from "../../api/student_api";
 import StudentForm_Add from "../forms/studentform_add";
 import StudentForm_Edit from "../forms/studentform_edit";
 import StudentForm_Filter from "../forms/studentform_filter";
+import StudentDetailsModal from "../forms/studentdetails";
 import Pagination from "../pagination";
 
 function StudentTable() {
   const [students, setStudents] = useState([]);
+  const [studentImages, setStudentImages] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({
@@ -36,23 +43,35 @@ function StudentTable() {
       const { data: rows, total_pages } = data;
       setStudents(rows);
       setMaxPage(total_pages || 1);
+
+      const imagePromises = rows.map(async (student) => {
+        try {
+          const imgData = await getStudentImage(student.id);
+          return { id: student.id, url: imgData?.supabase_public_url || null };
+        } catch {
+          return { id: student.id, url: null };
+        }
+      });
+      const images = await Promise.all(imagePromises);
+      const imageMap = {};
+      images.forEach((img) => {
+        imageMap[img.id] = img.url;
+      });
+      setStudentImages(imageMap);
     } catch (err) {
       console.error("Error fetching students:", err);
     }
   };
 
-  // load at the start
   useEffect(() => {
     fetchData(searchQuery, filters);
   }, []);
 
-  // reset to page 1 when search
   useEffect(() => {
     setPage(1);
     fetchData(searchQuery, filters, 1);
   }, [searchQuery]);
 
-  // update when filters change (sort, order)
   useEffect(() => {
     fetchData(searchQuery, filters, page);
   }, [filters]);
@@ -69,8 +88,6 @@ function StudentTable() {
 
     try {
       await deleteStudent(id);
-
-      // refresh after deletion to keep pagination consistent
       const updatedPage = Math.max(1, Math.min(page, maxPage));
       await fetchData(searchQuery, filters, updatedPage);
     } catch (err) {
@@ -87,6 +104,18 @@ function StudentTable() {
   const handleAdd = () => {
     setEditingStudent(null);
     setShowForm(true);
+  };
+
+  const handleRowClick = (studentId) => {
+    setSelectedStudentId(studentId);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedStudentId(null);
+  };
+
+  const handleImageUpdate = () => {
+    fetchData(searchQuery, filters, page);
   };
 
   return (
@@ -152,11 +181,20 @@ function StudentTable() {
         </div>
       )}
 
+      {selectedStudentId && (
+        <StudentDetailsModal
+          studentId={selectedStudentId}
+          onClose={handleCloseDetails}
+          onImageUpdate={handleImageUpdate}
+        />
+      )}
+
       {/* table */}
       <div className="overflow-x-auto rounded-box border border-base-content/5 bg-white text-black">
         <table className="table min-w-auto">
           <thead className="bg-blue-300 text-white">
             <tr>
+              <th></th>
               <th>Student ID</th>
               <th>First Name</th>
               <th>Last Name</th>
@@ -169,7 +207,24 @@ function StudentTable() {
 
           <tbody className="text-gray-700">
             {students.map((student) => (
-              <tr key={student.id} className="hover:bg-blue-100">
+              <tr
+                key={student.id}
+                className="hover:bg-blue-100 cursor-pointer"
+                onClick={() => handleRowClick(student.id)}
+              >
+                <td>
+                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-300 flex items-center justify-center">
+                    {studentImages[student.id] ? (
+                      <img
+                        src={studentImages[student.id]}
+                        alt={`${student.firstname} ${student.lastname}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <i className="pi pi-user text-xl text-gray-400"></i>
+                    )}
+                  </div>
+                </td>
                 <td>{student.id}</td>
                 <td>{student.firstname}</td>
                 <td>{student.lastname}</td>
@@ -179,13 +234,19 @@ function StudentTable() {
                 <td className="flex gap-2 justify-center">
                   <button
                     className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleEdit(student)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(student);
+                    }}
                   >
                     <i className="pi pi-pencil"></i>
                   </button>
                   <button
                     className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleDelete(student.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(student.id);
+                    }}
                   >
                     <i className="pi pi-trash"></i>
                   </button>
@@ -194,7 +255,7 @@ function StudentTable() {
             ))}
             {students.length === 0 && (
               <tr>
-                <td colSpan="7" className="text-center py-4 text-gray-500">
+                <td colSpan="8" className="text-center py-4 text-gray-500">
                   No students found.
                 </td>
               </tr>
