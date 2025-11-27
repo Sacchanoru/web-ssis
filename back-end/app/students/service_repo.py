@@ -1,5 +1,6 @@
 from app.database import get_db
 from app.utils.pagination_help import paginate_query
+from app.students.image_service import ImageService
 
 class StudentService:
     @staticmethod
@@ -15,15 +16,15 @@ class StudentService:
         if order.lower() not in ("asc", "desc"):
             order = "asc"
 
-        # join student with program name
         sql = """
-            SELECT s.id, s.firstname, s.lastname, s.course, p.name AS program_name, s.year, s.gender
+            SELECT s.id, s.firstname, s.lastname, s.course, p.name AS program_name,
+                   s.year, s.gender
             FROM student s
             LEFT JOIN program p ON s.course = p.code
         """
         params = []
 
-        # search
+        # search filters
         if search:
             if filter_by == "none":
                 sql += """
@@ -47,14 +48,16 @@ class StudentService:
                 params = [f"%{search}%"]
 
         sql += f" ORDER BY s.{sort_by} {order.upper()}"
-
-        # debug testing
         print("→ SQL:", cur.mogrify(sql, params).decode())
-
-        # pagination
         result = paginate_query(cur, sql, params, page, per_page)
-        result["data"] = [
-            {
+
+        merged_data = []
+        for r in result["data"]:
+            student_id = r[0]
+            image_record = ImageService.get_student_image(student_id)
+            image_url = image_record["supabase_public_url"] if image_record else None
+
+            merged_data.append({
                 "id": r[0],
                 "firstname": r[1],
                 "lastname": r[2],
@@ -62,11 +65,11 @@ class StudentService:
                 "program_name": r[4],
                 "year": r[5],
                 "gender": r[6],
-            }
-            for r in result["data"]
-        ]
+                "image_url": image_url
+            })
 
         cur.close()
+        result["data"] = merged_data
         return result
 
     @staticmethod
@@ -102,6 +105,12 @@ class StudentService:
         deleted = cur.fetchone()
         db.commit()
         cur.close()
+
+        try:
+            from app.students.image_service import ImageService
+            ImageService.delete_student_image(student_id)
+        except Exception as e:
+            print(f"Warning: failed to delete Supabase image: {str(e)}")
 
         if deleted:
             return {

@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "primeicons/primeicons.css";
-import {
-  getStudents,
-  deleteStudent,
-  getStudentImage,
-} from "../../api/student_api";
+import { getStudents, deleteStudent } from "../../api/student_api";
 import StudentForm_Add from "../forms/studentform_add";
 import StudentForm_Edit from "../forms/studentform_edit";
 import StudentForm_Filter from "../forms/studentform_filter";
@@ -13,7 +9,6 @@ import Pagination from "../pagination";
 
 function StudentTable() {
   const [students, setStudents] = useState([]);
-  const [studentImages, setStudentImages] = useState({});
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -26,6 +21,7 @@ function StudentTable() {
   });
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchData = async (
     query = "",
@@ -41,23 +37,12 @@ function StudentTable() {
         currentPage
       );
       const { data: rows, total_pages } = data;
-      setStudents(rows);
+      const rowsWithTimestamp = rows.map((row) => ({
+        ...row,
+        image_url: row.image_url ? `${row.image_url}?t=${Date.now()}` : null,
+      }));
+      setStudents(rowsWithTimestamp);
       setMaxPage(total_pages || 1);
-
-      const imagePromises = rows.map(async (student) => {
-        try {
-          const imgData = await getStudentImage(student.id);
-          return { id: student.id, url: imgData?.supabase_public_url || null };
-        } catch {
-          return { id: student.id, url: null };
-        }
-      });
-      const images = await Promise.all(imagePromises);
-      const imageMap = {};
-      images.forEach((img) => {
-        imageMap[img.id] = img.url;
-      });
-      setStudentImages(imageMap);
     } catch (err) {
       console.error("Error fetching students:", err);
     }
@@ -65,7 +50,7 @@ function StudentTable() {
 
   useEffect(() => {
     fetchData(searchQuery, filters);
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     setPage(1);
@@ -76,8 +61,13 @@ function StudentTable() {
     fetchData(searchQuery, filters, page);
   }, [filters]);
 
-  const handleSave = () => {
-    fetchData();
+  const triggerRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleSave = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await fetchData(searchQuery, filters, page);
     setShowForm(false);
     setEditingStudent(null);
   };
@@ -88,8 +78,18 @@ function StudentTable() {
 
     try {
       await deleteStudent(id);
-      const updatedPage = Math.max(1, Math.min(page, maxPage));
-      await fetchData(searchQuery, filters, updatedPage);
+
+      const data = await getStudents(
+        searchQuery,
+        filters.filter_by,
+        filters.order,
+        filters.sort_by,
+        page
+      );
+      const { data: rows, total_pages } = data;
+      const newPage = page > total_pages ? Math.max(1, total_pages) : page;
+
+      await fetchData(searchQuery, filters, newPage);
     } catch (err) {
       console.error("Error deleting student:", err);
       alert("Something went wrong while deleting.");
@@ -112,9 +112,6 @@ function StudentTable() {
 
   const handleCloseDetails = () => {
     setSelectedStudentId(null);
-  };
-
-  const handleImageUpdate = () => {
     fetchData(searchQuery, filters, page);
   };
 
@@ -185,16 +182,15 @@ function StudentTable() {
         <StudentDetailsModal
           studentId={selectedStudentId}
           onClose={handleCloseDetails}
-          onImageUpdate={handleImageUpdate}
         />
       )}
 
-      {/* table */}
+      {/* Table */}
       <div className="overflow-x-auto rounded-box border border-base-content/5 bg-white text-black">
         <table className="table min-w-auto">
           <thead className="bg-blue-300 text-white">
             <tr>
-              <th></th>
+              <th>Image</th>
               <th>Student ID</th>
               <th>First Name</th>
               <th>Last Name</th>
@@ -213,16 +209,18 @@ function StudentTable() {
                 onClick={() => handleRowClick(student.id)}
               >
                 <td>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-300 flex items-center justify-center">
-                    {studentImages[student.id] ? (
-                      <img
-                        src={studentImages[student.id]}
-                        alt={`${student.firstname} ${student.lastname}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <i className="pi pi-user text-xl text-gray-400"></i>
-                    )}
+                  <div className="avatar">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {student.image_url ? (
+                        <img
+                          src={student.image_url}
+                          alt={`${student.firstname} ${student.lastname}`}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <i className="pi pi-user text-gray-400 w-full h-full text-[2rem] flex items-center justify-center"></i>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td>{student.id}</td>

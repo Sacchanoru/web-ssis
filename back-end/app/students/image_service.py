@@ -1,15 +1,6 @@
-import os
-import cloudinary
-import cloudinary.uploader
-import requests
 from io import BytesIO
+from PIL import Image, ImageOps
 from app.supabase_client import supabase
-
-cloudinary.config(
-    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-    api_key=os.getenv("CLOUDINARY_API_KEY"),
-    api_secret=os.getenv("CLOUDINARY_API_SECRET")
-)
 
 class ImageService:
     BUCKET_NAME = "student-images"
@@ -17,27 +8,19 @@ class ImageService:
     @staticmethod
     def upload_student_image(student_id: str, file):
         try:
-            cloudinary_response = cloudinary.uploader.upload(
-                file,
-                folder="student_temp",
-                transformation=[
-                    {'width': 500, 'height': 500, 'crop': 'fill', 'gravity': 'face'},
-                    {'quality': 'auto:good'}
-                ]
-            )
-            
-            cloudinary_url = cloudinary_response['secure_url']
-            cloudinary_public_id = cloudinary_response['public_id']
-            response = requests.get(cloudinary_url)
-            if response.status_code != 200:
-                raise Exception("Failed to download from Cloudinary")
-            
-            image_bytes = BytesIO(response.content)
+            file_bytes = file.read()
+            img = Image.open(BytesIO(file_bytes))
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img = ImageOps.fit(img, (500, 500), method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
+            output_bytes = BytesIO()
+            img.save(output_bytes, format='JPEG', quality=85, optimize=True)
+            output_bytes.seek(0)
+
             file_path = f"students/{student_id}.jpg"
-            
             supabase.storage.from_(ImageService.BUCKET_NAME).upload(
                 file_path,
-                image_bytes.getvalue(),
+                output_bytes.getvalue(),
                 file_options={
                     "content-type": "image/jpeg",
                     "upsert": "true"
@@ -46,7 +29,7 @@ class ImageService:
 
             public_url_data = supabase.storage.from_(ImageService.BUCKET_NAME).get_public_url(file_path)
             supabase_public_url = public_url_data
-            cloudinary.uploader.destroy(cloudinary_public_id)
+
             existing = supabase.table("student_images").select("*").eq("student_id", student_id).execute()
             
             if existing.data:
@@ -68,11 +51,6 @@ class ImageService:
             }
             
         except Exception as e:
-            try:
-                if 'cloudinary_public_id' in locals():
-                    cloudinary.uploader.destroy(cloudinary_public_id)
-            except:
-                pass
             raise Exception(f"Image upload failed: {str(e)}")
     
     @staticmethod
