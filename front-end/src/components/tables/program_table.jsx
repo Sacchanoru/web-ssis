@@ -6,11 +6,27 @@ import ProgramForm_Edit from "../forms/programform_edit";
 import ProgramForm_Filter from "../forms/programform_filter";
 import Pagination from "../pagination";
 
+function ProgramTableSkeleton({ rows = 1 }) {
+  return (
+    <tbody>
+      {[...Array(rows)].map((_, idx) => (
+        <tr key={idx} className="animate-pulse">
+          <td className="h-12 w-32 bg-gray-200 rounded"></td>
+          <td className="h-12 w-64 bg-gray-200 rounded"></td>
+          <td className="h-12 w-32 bg-gray-200 rounded"></td>
+          <td className="h-12 w-20 bg-gray-200 rounded"></td>
+        </tr>
+      ))}
+    </tbody>
+  );
+}
+
 function ProgramTable() {
   const [programs, setPrograms] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({
     filter_by: "none",
@@ -19,6 +35,7 @@ function ProgramTable() {
   });
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async (
     query = "",
@@ -26,6 +43,7 @@ function ProgramTable() {
     currentPage = page
   ) => {
     try {
+      setLoading(true);
       const data = await getPrograms(
         query,
         customFilters.filter_by,
@@ -38,24 +56,17 @@ function ProgramTable() {
       setMaxPage(total_pages || 1);
     } catch (err) {
       console.error("Error fetching programs:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(searchQuery, filters);
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-    fetchData(searchQuery, filters, 1);
-  }, [searchQuery]);
-
-  useEffect(() => {
     fetchData(searchQuery, filters, page);
-  }, [filters]);
+  }, [page, filters, searchQuery]);
 
   const handleSave = () => {
-    fetchData();
+    fetchData(searchQuery, filters, page);
     setShowForm(false);
     setEditingProgram(null);
   };
@@ -84,6 +95,13 @@ function ProgramTable() {
     setShowForm(true);
   };
 
+  const handleSearchKey = (e) => {
+    if (e.key === "Enter") {
+      setPage(1);
+      setSearchQuery(searchInput);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -98,8 +116,9 @@ function ProgramTable() {
           type="text"
           placeholder="Search programs..."
           className="input input-bordered w-full max-w-xs bg-white border-gray-600 text-gray-600"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={handleSearchKey}
         />
 
         <button
@@ -117,7 +136,8 @@ function ProgramTable() {
           onClose={() => setShowFilter(false)}
           onApply={(newFilters) => {
             setFilters(newFilters);
-            fetchData(searchQuery, newFilters);
+            setPage(1);
+            fetchData(searchQuery, newFilters, 1);
             setShowFilter(false);
           }}
         />
@@ -159,36 +179,40 @@ function ProgramTable() {
             </tr>
           </thead>
 
-          <tbody className="text-gray-700">
-            {programs.map((program) => (
-              <tr key={program.code} className="hover:bg-blue-100">
-                <td>{program.code}</td>
-                <td>{program.name}</td>
-                <td>{program.college_code || "—"}</td>
-                <td className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleEdit(program)}
-                  >
-                    <i className="pi pi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleDelete(program.code)}
-                  >
-                    <i className="pi pi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {programs.length === 0 && (
-              <tr>
-                <td colSpan="4" className="text-center py-4 text-gray-500">
-                  No programs found.
-                </td>
-              </tr>
-            )}
-          </tbody>
+          {loading ? (
+            <ProgramTableSkeleton rows={1} />
+          ) : (
+            <tbody className="text-gray-700">
+              {programs.map((program) => (
+                <tr key={program.code} className="hover:bg-blue-100">
+                  <td>{program.code}</td>
+                  <td>{program.name}</td>
+                  <td>{program.college_code || "—"}</td>
+                  <td className="flex gap-2 justify-center">
+                    <button
+                      className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={() => handleEdit(program)}
+                    >
+                      <i className="pi pi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={() => handleDelete(program.code)}
+                    >
+                      <i className="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {programs.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="text-center py-4 text-gray-500">
+                    No programs found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

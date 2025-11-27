@@ -1,6 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { getStudentWithImage } from "../../api/student_api";
 
+function StudentDetailsSkeleton({ onClose }) {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-blue-300 text-white p-4 rounded-t-lg flex justify-between items-center">
+          <div className="h-6 w-48 bg-blue-400 rounded"></div>
+          <div className="h-6 w-6 bg-blue-400 rounded-full"></div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-48 h-48 rounded-full bg-gray-200 border-4 border-blue-300"></div>
+            <div className="flex gap-2">
+              <div className="h-10 w-32 bg-gray-300 rounded"></div>
+              <div className="h-10 w-32 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+
+          <div className="divider"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 bg-gray-300 rounded"></div>
+                <div className="h-6 w-full bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-lg border-t">
+          <div className="h-10 w-full bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StudentDetailsModal({ studentId, onClose }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,13 +66,7 @@ function StudentDetailsModal({ studentId, onClose }) {
   };
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-        <div className="bg-white p-8 rounded-lg">
-          <div className="loading loading-spinner loading-lg"></div>
-        </div>
-      </div>
-    );
+    return <StudentDetailsSkeleton onClose={onClose} />;
   }
 
   if (!student) {

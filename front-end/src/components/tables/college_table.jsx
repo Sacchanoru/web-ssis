@@ -6,11 +6,26 @@ import CollegeForm_Edit from "../forms/collegeform_edit";
 import CollegeForm_Filter from "../forms/collegeform_filter";
 import Pagination from "../pagination";
 
+function CollegeTableSkeleton({ rows = 1 }) {
+  return (
+    <tbody>
+      {[...Array(rows)].map((_, idx) => (
+        <tr key={idx} className="animate-pulse">
+          <td className="h-12 w-32 bg-gray-200 rounded"></td>
+          <td className="h-12 w-64 bg-gray-200 rounded"></td>
+          <td className="h-12 w-20 bg-gray-200 rounded"></td>
+        </tr>
+      ))}
+    </tbody>
+  );
+}
+
 function CollegeTable() {
   const [colleges, setColleges] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingCollege, setEditingCollege] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({
     filter_by: "none",
@@ -19,6 +34,7 @@ function CollegeTable() {
   });
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async (
     query = "",
@@ -26,6 +42,7 @@ function CollegeTable() {
     currentPage = page
   ) => {
     try {
+      setLoading(true);
       const data = await getColleges(
         query,
         customFilters.filter_by,
@@ -38,21 +55,14 @@ function CollegeTable() {
       setMaxPage(total_pages || 1);
     } catch (err) {
       console.error("Error fetching colleges:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(searchQuery, filters);
-  }, []);
-
-  useEffect(() => {
-    setPage(1);
-    fetchData(searchQuery, filters, 1);
-  }, [searchQuery]);
-
-  useEffect(() => {
     fetchData(searchQuery, filters, page);
-  }, [filters]);
+  }, [page, filters, searchQuery]);
 
   const handleSave = async () => {
     await fetchData(searchQuery, filters, page);
@@ -66,25 +76,8 @@ function CollegeTable() {
 
     try {
       await deleteCollege(code);
-
-      const data = await getColleges(
-        searchQuery,
-        filters.filter_by,
-        filters.order,
-        filters.sort_by,
-        page
-      );
-
-      const { data: rows, total_pages } = data;
-
-      if (rows.length === 0 && page > 1) {
-        const newPage = page - 1;
-        setPage(newPage);
-        await fetchData(searchQuery, filters, newPage);
-      } else {
-        setColleges(rows);
-        setMaxPage(total_pages || 1);
-      }
+      const updatedPage = Math.max(1, Math.min(page, maxPage));
+      await fetchData(searchQuery, filters, updatedPage);
     } catch (err) {
       console.error("Error deleting college:", err);
       alert("Something went wrong while deleting.");
@@ -101,6 +94,13 @@ function CollegeTable() {
     setShowForm(true);
   };
 
+  const handleSearchKey = (e) => {
+    if (e.key === "Enter") {
+      setPage(1);
+      setSearchQuery(searchInput);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -115,8 +115,9 @@ function CollegeTable() {
           type="text"
           placeholder="Search colleges..."
           className="input input-bordered w-full max-w-xs bg-white border-gray-600 text-gray-600"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={handleSearchKey}
         />
 
         <button
@@ -134,7 +135,8 @@ function CollegeTable() {
           onClose={() => setShowFilter(false)}
           onApply={(newFilters) => {
             setFilters(newFilters);
-            fetchData(searchQuery, newFilters);
+            setPage(1);
+            fetchData(searchQuery, newFilters, 1);
             setShowFilter(false);
           }}
         />
@@ -175,35 +177,39 @@ function CollegeTable() {
             </tr>
           </thead>
 
-          <tbody className="text-gray-700">
-            {colleges.map((college) => (
-              <tr key={college.code} className="hover:bg-blue-100">
-                <td>{college.code}</td>
-                <td>{college.name}</td>
-                <td className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleEdit(college)}
-                  >
-                    <i className="pi pi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={() => handleDelete(college.code)}
-                  >
-                    <i className="pi pi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {colleges.length === 0 && (
-              <tr>
-                <td colSpan="3" className="text-center py-4 text-gray-500">
-                  No colleges found.
-                </td>
-              </tr>
-            )}
-          </tbody>
+          {loading ? (
+            <CollegeTableSkeleton rows={1} />
+          ) : (
+            <tbody className="text-gray-700">
+              {colleges.map((college) => (
+                <tr key={college.code} className="hover:bg-blue-100">
+                  <td>{college.code}</td>
+                  <td>{college.name}</td>
+                  <td className="flex gap-2 justify-center">
+                    <button
+                      className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={() => handleEdit(college)}
+                    >
+                      <i className="pi pi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={() => handleDelete(college.code)}
+                    >
+                      <i className="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {colleges.length === 0 && (
+                <tr>
+                  <td colSpan="3" className="text-center py-4 text-gray-500">
+                    No colleges found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

@@ -8,6 +8,32 @@ import {
 } from "../../api/student_api";
 import { getPrograms } from "../../api/program_api";
 
+function StudentFormSkeleton() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 shadow-md max-h-[90vh] overflow-y-auto">
+        <h2 className="h-6 w-48 bg-blue-400 rounded mb-4"></h2>
+
+        <div className="mb-4 flex flex-col items-center space-y-3">
+          <div className="w-32 h-32 rounded-full bg-gray-200 border-4 border-blue-300"></div>
+          <div className="h-10 w-32 bg-gray-300 rounded"></div>
+        </div>
+
+        <div className="grid gap-2">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="h-10 w-full bg-gray-200 rounded"></div>
+          ))}
+        </div>
+
+        <div className="flex justify-end mt-4 gap-2">
+          <div className="h-10 w-24 bg-gray-300 rounded"></div>
+          <div className="h-10 w-24 bg-blue-400 rounded"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StudentForm_Edit({ student, onClose, onSave }) {
   const [formData, setFormData] = useState({
     id: "",
@@ -198,15 +224,7 @@ function StudentForm_Edit({ student, onClose, onSave }) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white p-8 rounded-lg">
-          <div className="loading loading-spinner loading-lg"></div>
-        </div>
-      </div>
-    );
-  }
+  if (loading || uploading) return <StudentFormSkeleton />;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -284,7 +302,6 @@ function StudentForm_Edit({ student, onClose, onSave }) {
             onChange={handleChange}
             disabled={uploading}
           />
-
           <input
             type="text"
             name="firstname"
@@ -294,7 +311,6 @@ function StudentForm_Edit({ student, onClose, onSave }) {
             onChange={handleChange}
             disabled={uploading}
           />
-
           <input
             type="text"
             name="lastname"
@@ -304,7 +320,6 @@ function StudentForm_Edit({ student, onClose, onSave }) {
             onChange={handleChange}
             disabled={uploading}
           />
-
           <select
             name="course"
             value={formData.course}
@@ -319,7 +334,6 @@ function StudentForm_Edit({ student, onClose, onSave }) {
               </option>
             ))}
           </select>
-
           <select
             name="year"
             value={formData.year}
@@ -334,7 +348,6 @@ function StudentForm_Edit({ student, onClose, onSave }) {
               </option>
             ))}
           </select>
-
           <select
             name="gender"
             value={formData.gender}

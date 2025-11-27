@@ -7,12 +7,32 @@ import StudentForm_Filter from "../forms/studentform_filter";
 import StudentDetailsModal from "../forms/studentdetails";
 import Pagination from "../pagination";
 
+function TableSkeleton({ rows = 1 }) {
+  return (
+    <tbody>
+      {[...Array(rows)].map((_, idx) => (
+        <tr key={idx} className="animate-pulse">
+          <td className="h-12 w-32 bg-gray-200 rounded"></td>
+          <td className="h-12 w-32 bg-gray-200 "></td>
+          <td className="h-12 w-24 bg-gray-200 "></td>
+          <td className="h-12 w-24 bg-gray-200 "></td>
+          <td className="h-12 w-24 bg-gray-200 "></td>
+          <td className="h-12 w-16 bg-gray-200 "></td>
+          <td className="h-12 w-16 bg-gray-200 "></td>
+          <td className="h-12 w-20 bg-gray-200 rounded"></td>
+        </tr>
+      ))}
+    </tbody>
+  );
+}
+
 function StudentTable() {
   const [students, setStudents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState({
     filter_by: "none",
@@ -22,6 +42,7 @@ function StudentTable() {
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const fetchData = async (
     query = "",
@@ -29,6 +50,7 @@ function StudentTable() {
     currentPage = page
   ) => {
     try {
+      setLoading(true);
       const data = await getStudents(
         query,
         customFilters.filter_by,
@@ -45,21 +67,14 @@ function StudentTable() {
       setMaxPage(total_pages || 1);
     } catch (err) {
       console.error("Error fetching students:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(searchQuery, filters);
-  }, [refreshKey]);
-
-  useEffect(() => {
-    setPage(1);
-    fetchData(searchQuery, filters, 1);
-  }, [searchQuery]);
-
-  useEffect(() => {
     fetchData(searchQuery, filters, page);
-  }, [filters]);
+  }, [refreshKey, page, filters, searchQuery]);
 
   const triggerRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -78,7 +93,6 @@ function StudentTable() {
 
     try {
       await deleteStudent(id);
-
       const data = await getStudents(
         searchQuery,
         filters.filter_by,
@@ -86,9 +100,8 @@ function StudentTable() {
         filters.sort_by,
         page
       );
-      const { data: rows, total_pages } = data;
+      const { total_pages } = data;
       const newPage = page > total_pages ? Math.max(1, total_pages) : page;
-
       await fetchData(searchQuery, filters, newPage);
     } catch (err) {
       console.error("Error deleting student:", err);
@@ -115,6 +128,13 @@ function StudentTable() {
     fetchData(searchQuery, filters, page);
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setPage(1);
+      setSearchQuery(searchInput);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -129,8 +149,9 @@ function StudentTable() {
           type="text"
           placeholder="Search students..."
           className="input input-bordered w-full max-w-xs bg-white border-gray-600 text-gray-600"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
         />
 
         <button
@@ -141,20 +162,17 @@ function StudentTable() {
         </button>
       </div>
 
-      {/* filter Modal */}
       {showFilter && (
         <StudentForm_Filter
           initialFilter={filters}
           onClose={() => setShowFilter(false)}
           onApply={(newFilters) => {
             setFilters(newFilters);
-            fetchData(searchQuery, newFilters);
-            setShowFilter(false);
+            setPage(1);
           }}
         />
       )}
 
-      {/* add or edit modal */}
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           {editingStudent ? (
@@ -185,7 +203,6 @@ function StudentTable() {
         />
       )}
 
-      {/* Table */}
       <div className="overflow-x-auto rounded-box border border-base-content/5 bg-white text-black">
         <table className="table min-w-auto">
           <thead className="bg-blue-300 text-white">
@@ -201,64 +218,68 @@ function StudentTable() {
             </tr>
           </thead>
 
-          <tbody className="text-gray-700">
-            {students.map((student) => (
-              <tr
-                key={student.id}
-                className="hover:bg-blue-100 cursor-pointer"
-                onClick={() => handleRowClick(student.id)}
-              >
-                <td>
-                  <div className="avatar">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                      {student.image_url ? (
-                        <img
-                          src={student.image_url}
-                          alt={`${student.firstname} ${student.lastname}`}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <i className="pi pi-user text-gray-400 w-full h-full text-[2rem] flex items-center justify-center"></i>
-                      )}
+          {loading ? (
+            <TableSkeleton rows={5} />
+          ) : (
+            <tbody className="text-gray-700">
+              {students.map((student) => (
+                <tr
+                  key={student.id}
+                  className="hover:bg-blue-100 cursor-pointer"
+                  onClick={() => handleRowClick(student.id)}
+                >
+                  <td>
+                    <div className="avatar">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                        {student.image_url ? (
+                          <img
+                            src={student.image_url}
+                            alt={`${student.firstname} ${student.lastname}`}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <i className="pi pi-user text-gray-400 w-full h-full text-[2rem] flex items-center justify-center"></i>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td>{student.id}</td>
-                <td>{student.firstname}</td>
-                <td>{student.lastname}</td>
-                <td>{student.course || "—"}</td>
-                <td>{student.year}</td>
-                <td>{student.gender}</td>
-                <td className="flex gap-2 justify-center">
-                  <button
-                    className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(student);
-                    }}
-                  >
-                    <i className="pi pi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(student.id);
-                    }}
-                  >
-                    <i className="pi pi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {students.length === 0 && (
-              <tr>
-                <td colSpan="8" className="text-center py-4 text-gray-500">
-                  No students found.
-                </td>
-              </tr>
-            )}
-          </tbody>
+                  </td>
+                  <td>{student.id}</td>
+                  <td>{student.firstname}</td>
+                  <td>{student.lastname}</td>
+                  <td>{student.course || "—"}</td>
+                  <td>{student.year}</td>
+                  <td>{student.gender}</td>
+                  <td className="flex gap-2 justify-center">
+                    <button
+                      className="btn btn-ghost btn-md text-gray-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(student);
+                      }}
+                    >
+                      <i className="pi pi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-md text-red-500 border hover:bg-blue-200 hover:border-gray-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(student.id);
+                      }}
+                    >
+                      <i className="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {students.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="text-center py-4 text-gray-500">
+                    No students found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 
