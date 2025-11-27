@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.students.controllers import StudentController
 
-student_bp = Blueprint("student", __name__, url_prefix="/students")
+student_bp = Blueprint("student", __name__)
 
 @student_bp.route("/", methods=["GET"])
 def get_students():

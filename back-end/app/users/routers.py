@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.users.controllers import UserController
 
-user_bp = Blueprint("users", __name__, url_prefix="/users")
+user_bp = Blueprint("users", __name__)
 
 @user_bp.route("/register", methods=["POST"])
 def register_user():

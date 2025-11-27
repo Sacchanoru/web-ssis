@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE = "http://127.0.0.1:8000";
+import apiClient from "./config";
 
 export const getPrograms = async (
   search = "",
@@ -12,7 +10,6 @@ export const getPrograms = async (
 ) => {
   try {
     const params = new URLSearchParams();
-
     if (search) params.append("search", search);
     if (filter_by) params.append("filter_by", filter_by);
     if (order) params.append("order", order);
@@ -20,9 +17,7 @@ export const getPrograms = async (
     if (page) params.append("page", page);
     if (page_size) params.append("page_size", page_size);
 
-    const response = await axios.get(
-      `${API_BASE}/programs/?${params.toString()}`
-    );
+    const response = await apiClient.get(`/programs/?${params.toString()}`);
     return response.data;
   } catch (err) {
     console.error("Error getting programs:", err);
@@ -30,46 +25,22 @@ export const getPrograms = async (
   }
 };
 
-// add program
 export const addProgram = async (program) => {
-  try {
-    const response = await axios.post(`${API_BASE}/programs/`, program);
-    return response.data;
-  } catch (err) {
-    console.error("Error adding program:", err);
-    throw err;
-  }
+  const response = await apiClient.post("/programs/", program);
+  return response.data;
 };
 
-// delete program
 export const deleteProgram = async (code) => {
-  try {
-    const response = await axios.delete(`${API_BASE}/programs/${code}`);
-    return response.data;
-  } catch (err) {
-    console.error("Error deleting program:", err);
-    throw err;
-  }
+  const response = await apiClient.delete(`/programs/${code}`);
+  return response.data;
 };
 
-// edit program
 export const editProgram = async (code, newData) => {
-  try {
-    const response = await axios.put(`${API_BASE}/programs/${code}`, newData);
-    return response.data;
-  } catch (err) {
-    console.error("Error editing program:", err);
-    throw err;
-  }
+  const response = await apiClient.put(`/programs/${code}`, newData);
+  return response.data;
 };
 
-// check if prog alrdy exists
 export const programExists = async (code) => {
-  try {
-    const res = await axios.get(`${API_BASE}/programs/exists/${code}`);
-    return res.data.exists;
-  } catch (err) {
-    console.error("Error checking program existence:", err);
-    throw err;
-  }
+  const res = await apiClient.get(`/programs/exists/${code}`);
+  return res.data.exists;
 };

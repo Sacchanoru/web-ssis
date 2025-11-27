@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.programs.controllers import ProgramController
 
-program_bp = Blueprint("program", __name__, url_prefix="/programs")
+program_bp = Blueprint("program", __name__)
 
 @program_bp.route("/", methods=["GET"])
 def get_programs():

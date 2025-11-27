@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE = "http://127.0.0.1:8000";
+import apiClient from "./config";
 
 export const getColleges = async (
   search = "",
@@ -12,7 +10,6 @@ export const getColleges = async (
 ) => {
   try {
     const params = new URLSearchParams();
-
     if (search) params.append("search", search);
     if (filter_by) params.append("filter_by", filter_by);
     if (order) params.append("order", order);
@@ -20,9 +17,7 @@ export const getColleges = async (
     if (page) params.append("page", page);
     if (page_size) params.append("page_size", page_size);
 
-    const response = await axios.get(
-      `${API_BASE}/colleges/?${params.toString()}`
-    );
+    const response = await apiClient.get(`/colleges/?${params.toString()}`);
     return response.data;
   } catch (err) {
     console.error("Error getting colleges:", err);
@@ -31,36 +26,21 @@ export const getColleges = async (
 };
 
 export const addCollege = async (college) => {
-  try {
-    const response = await axios.post(`${API_BASE}/colleges/`, college);
-    return response.data;
-  } catch (err) {
-    console.error("Error adding college:", err);
-    throw err;
-  }
+  const response = await apiClient.post("/colleges/", college);
+  return response.data;
 };
 
 export const deleteCollege = async (code) => {
-  try {
-    const response = await axios.delete(`${API_BASE}/colleges/${code}`);
-    return response.data;
-  } catch (err) {
-    console.error("Error deleting college:", err);
-    throw err;
-  }
+  const response = await apiClient.delete(`/colleges/${code}`);
+  return response.data;
 };
 
 export const editCollege = async (code, newData) => {
-  try {
-    const response = await axios.put(`${API_BASE}/colleges/${code}`, newData);
-    return response.data;
-  } catch (err) {
-    console.error("Error editing college:", err);
-    throw err;
-  }
+  const response = await apiClient.put(`/colleges/${code}`, newData);
+  return response.data;
 };
 
 export const collegeExists = async (code) => {
-  const res = await axios.get(`${API_BASE}/colleges/exists/${code}`);
+  const res = await apiClient.get(`/colleges/exists/${code}`);
   return res.data.exists;
 };
