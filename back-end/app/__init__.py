@@ -12,7 +12,7 @@ def create_app():
     project_root = os.path.dirname(back_end_dir)    
     static_folder = os.path.join(project_root, 'front-end', 'dist')
 
-    app = Flask(__name__, static_folder=static_folder, static_url_path='')
+    app = Flask(__name__, static_folder=static_folder, static_url_path=None)
 
     print("Serving React build from:", static_folder)
     if os.path.exists(static_folder):
@@ -41,9 +41,15 @@ def create_app():
     
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
-    def serve(path):
+    def serve(path):   
         if path.startswith("api/"):
             return "API route not found", 404
+        
+        file_path = os.path.join(app.static_folder, path)
+        
+        if os.path.isfile(file_path):
+            print(f">>> Serving file: {path}")
+            return send_from_directory(app.static_folder, path)
         return send_from_directory(app.static_folder, "index.html")
 
     return app
