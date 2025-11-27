@@ -59,9 +59,10 @@ function ProgramForm_Add({ onClose, onSave }) {
     if (error) return;
 
     try {
+      // convert only Program Code to uppercase
       const newProgram = await addProgram({
         ...formData,
-        code: trimmedCode,
+        code: trimmedCode.toUpperCase(),
         name: trimmedName,
       });
 

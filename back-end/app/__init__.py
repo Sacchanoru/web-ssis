@@ -42,12 +42,8 @@ def create_app():
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve(path):
-        requested_file = os.path.join(app.static_folder, path)
-        if path != "" and os.path.exists(requested_file):
-            return send_from_directory(app.static_folder, path)
-        index_file = os.path.join(app.static_folder, "index.html")
-        if os.path.exists(index_file):
-            return send_from_directory(app.static_folder, "index.html")
-        return "React build not found. Run `npm run build` in front-end.", 404
+        if path.startswith("api/"):
+            return "API route not found", 404
+        return send_from_directory(app.static_folder, "index.html")
 
     return app

@@ -71,9 +71,9 @@ function ProgramForm_Edit({ program, onClose, onSave }) {
     if (error) return;
 
     try {
-      //check if program code alrdy exist
-      if (trimmedCode !== originalCode) {
-        const exists = await programExists(trimmedCode);
+      //check if program code already exists
+      if (trimmedCode.toUpperCase() !== originalCode) {
+        const exists = await programExists(trimmedCode.toUpperCase());
         if (exists) {
           setError("That Program Code already exists! Please use another one.");
           return;
@@ -82,7 +82,7 @@ function ProgramForm_Edit({ program, onClose, onSave }) {
 
       const editedProgram = await editProgram(originalCode, {
         ...formData,
-        code: trimmedCode,
+        code: trimmedCode.toUpperCase(), // convert Program Code to uppercase
         name: trimmedName,
       });
 

@@ -10,7 +10,7 @@ function RouterWrapper() {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/">
       <RouterWrapper />
     </BrowserRouter>
   </React.StrictMode>

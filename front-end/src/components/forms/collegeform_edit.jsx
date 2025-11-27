@@ -46,6 +46,9 @@ function CollegeForm_Edit({ college, onClose, onSave }) {
     if (error) return;
 
     try {
+      // convert only code to uppercase
+      trimmedData.code = trimmedData.code.toUpperCase();
+
       // checks if code, verify uniqueness
       if (trimmedData.code !== originalCode) {
         const exists = await collegeExists(trimmedData.code);

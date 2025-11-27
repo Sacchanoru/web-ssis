@@ -32,7 +32,11 @@ function CollegeForm_Add({ onClose, onSave }) {
     if (error) return;
 
     try {
-      const newCollege = await addCollege(trimmedData);
+      // convert only code to uppercase
+      const newCollege = await addCollege({
+        code: trimmedData.code.toUpperCase(),
+        name: trimmedData.name,
+      });
       console.log("API returned:", newCollege);
 
       if (onSave) onSave(newCollege);
