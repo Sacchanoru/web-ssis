@@ -133,6 +133,7 @@ class StudentService:
             FROM student WHERE id = %s
         """, (student_id,))
         row = cur.fetchone()
+
         if not row:
             cur.close()
             return None
@@ -150,10 +151,25 @@ class StudentService:
             WHERE id = %s
             RETURNING id, firstname, lastname, course, year, gender
         """
-        cur.execute(sql, (new_id, new_firstname, new_lastname, new_course, new_year, new_gender, student_id))
+
+        cur.execute(sql, (
+            new_id, new_firstname, new_lastname, new_course,
+            new_year, new_gender, student_id
+        ))
+
         updated = cur.fetchone()
         db.commit()
         cur.close()
+
+        # -----------------------------------------------------
+        # FIX: Move image if the student ID changes
+        # -----------------------------------------------------
+        if updated and student_id != new_id:
+            try:
+                ImageService.move_student_image(student_id, new_id)
+            except Exception as e:
+                print("Warning: could not move image:", e)
+        # -----------------------------------------------------
 
         if updated:
             return {
@@ -164,6 +180,7 @@ class StudentService:
                 "year": updated[4],
                 "gender": updated[5],
             }
+
         return None
 
     @staticmethod

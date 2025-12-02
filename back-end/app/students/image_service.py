@@ -95,3 +95,30 @@ class ImageService:
             
         except Exception as e:
             raise Exception(f"Image update failed: {str(e)}")
+        
+    @staticmethod
+    def move_student_image(old_id: str, new_id: str):
+        try:
+            record = ImageService.get_student_image(old_id)
+            if not record:
+                return
+
+            old_path = record["supabase_path"]
+            new_path = f"students/{new_id}.jpg"
+            file_bytes = supabase.storage.from_(ImageService.BUCKET_NAME).download(old_path)
+            supabase.storage.from_(ImageService.BUCKET_NAME).upload(
+                new_path,
+                file_bytes,
+                file_options={"content-type": "image/jpeg", "upsert": "true"}
+            )
+            supabase.storage.from_(ImageService.BUCKET_NAME).remove([old_path])
+            new_public_url = supabase.storage.from_(ImageService.BUCKET_NAME).get_public_url(new_path)
+
+            supabase.table("student_images").update({
+                "student_id": new_id,
+                "supabase_path": new_path,
+                "supabase_public_url": new_public_url
+            }).eq("student_id", old_id).execute()
+
+        except Exception as e:
+            print(f"Failed to move image when renaming ID: {e}")
