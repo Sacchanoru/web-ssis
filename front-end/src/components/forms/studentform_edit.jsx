@@ -224,11 +224,11 @@ function StudentForm_Edit({ student, onClose, onSave }) {
     }
   };
 
-  if (loading || uploading) return <StudentFormSkeleton />;
+  if (loading) return <StudentFormSkeleton />;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 max-h-[90vh] overflow-y-auto flex flex-col">
         <h2 className="text-lg font-bold mb-4 text-blue-400">Edit Student</h2>
 
         <div className="mb-4 flex flex-col items-center space-y-3">
@@ -262,7 +262,11 @@ function StudentForm_Edit({ student, onClose, onSave }) {
             </button>
           ) : (
             <div className="flex gap-2">
-              <label className="btn btn-sm bg-blue-400 text-white hover:bg-blue-500 cursor-pointer disabled:bg-gray-300 disabled:text-white">
+              <label
+                className={`btn btn-sm bg-blue-400 text-white hover:bg-blue-500 cursor-pointer transition ${
+                  uploading ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
                 <i className="pi pi-upload mr-1"></i>
                 {currentImage ? "Change Image" : "Upload Image"}
                 <input
