@@ -161,15 +161,11 @@ class StudentService:
         db.commit()
         cur.close()
 
-        # -----------------------------------------------------
-        # FIX: Move image if the student ID changes
-        # -----------------------------------------------------
         if updated and student_id != new_id:
             try:
                 ImageService.move_student_image(student_id, new_id)
             except Exception as e:
                 print("Warning: could not move image:", e)
-        # -----------------------------------------------------
 
         if updated:
             return {
@@ -192,3 +188,38 @@ class StudentService:
         exists = cur.fetchone()[0]
         cur.close()
         return exists
+    
+    @staticmethod
+    def get_student_with_image(student_id: str):
+        db = get_db()
+        cur = db.cursor()
+
+        sql = """
+            SELECT s.id, s.firstname, s.lastname, s.course, 
+                p.name AS program_name, s.year, s.gender
+            FROM student s
+            LEFT JOIN program p ON s.course = p.code
+            WHERE s.id = %s
+        """
+
+        cur.execute(sql, (student_id,))
+        row = cur.fetchone()
+        cur.close()
+
+        if not row:
+            return None
+
+        student = {
+            "id": row[0],
+            "firstname": row[1],
+            "lastname": row[2],
+            "course": row[3],
+            "program_name": row[4],
+            "year": row[5],
+            "gender": row[6],
+        }
+
+        image_record = ImageService.get_student_image(student_id)
+        student["image"] = image_record
+
+        return student

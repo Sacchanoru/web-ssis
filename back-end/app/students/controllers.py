@@ -112,36 +112,9 @@ class StudentController:
     @staticmethod
     def get_student_with_image(student_id: str):
         try:
-            from app.database import get_db
-            db = get_db()
-            cur = db.cursor()
-            
-            cur.execute("""
-                SELECT id, firstname, lastname, course, year, gender
-                FROM student
-                WHERE id = %s
-            """, (student_id,))
-            
-            student_data = cur.fetchone()
-            cur.close()
-            
-            if not student_data:
+            student = StudentService.get_student_with_image(student_id)
+            if not student:
                 return jsonify({"error": "Student not found"}), 404
-            
-            student = {
-                "id": student_data[0],
-                "firstname": student_data[1],
-                "lastname": student_data[2],
-                "course": student_data[3],
-                "year": student_data[4],
-                "gender": student_data[5]
-            }
-            
-            # Attach image info
-            image_info = ImageService.get_student_image(student_id)
-            student["image"] = image_info
-            
             return jsonify(student), 200
-
         except Exception as e:
             return jsonify({"error": str(e)}), 500
