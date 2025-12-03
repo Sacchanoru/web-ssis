@@ -5,23 +5,20 @@ import { getPrograms } from "../../api/program_api";
 function StudentFormSkeleton() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 shadow-md max-h-[90vh] overflow-y-auto">
-        <h2 className="h-6 w-48 bg-blue-400 rounded mb-4"></h2>
-
+      <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 shadow-md max-h-[90vh] overflow-y-auto animate-pulse">
+        <h2 className="h-6 w-48 bg-blue-300 rounded mb-4"></h2>
         <div className="mb-4 flex flex-col items-center space-y-3">
           <div className="w-32 h-32 rounded-full bg-gray-200 border-4 border-blue-300"></div>
           <div className="h-10 w-32 bg-gray-300 rounded"></div>
         </div>
-
         <div className="grid gap-2">
           {[...Array(7)].map((_, i) => (
-            <div key={i} className="h-10 w-full bg-gray-200 rounded"></div>
+            <div key={i} className="h-10 w-full bg-gray-100 rounded"></div>
           ))}
         </div>
-
         <div className="flex justify-end mt-4 gap-2">
           <div className="h-10 w-24 bg-gray-300 rounded"></div>
-          <div className="h-10 w-24 bg-blue-400 rounded"></div>
+          <div className="h-10 w-24 bg-blue-300 rounded"></div>
         </div>
       </div>
     </div>
@@ -60,20 +57,30 @@ function StudentForm_Add({ onClose, onSave }) {
         setPrograms(allPrograms);
       } catch (err) {
         console.error("Error fetching programs:", err);
+        setError("Failed to load programs list.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchAllPrograms();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "id") {
+      const sanitized = value.replace(/[^0-9-]/g, "");
+      let formattedId = sanitized.replace(/-/g, "");
+      if (formattedId.length > 4) {
+        formattedId = formattedId.slice(0, 4) + "-" + formattedId.slice(4);
+      }
+      setFormData((prev) => ({ ...prev, [name]: formattedId.slice(0, 9) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileSelect = (e) => {
+    if (uploading) return;
     const file = e.target.files[0];
     if (!file) return;
 
@@ -82,7 +89,6 @@ function StudentForm_Add({ onClose, onSave }) {
       setError("Please select a valid image file (PNG, JPG, GIF)");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       setError("Image size must be less than 5MB");
       return;
@@ -94,9 +100,11 @@ function StudentForm_Add({ onClose, onSave }) {
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
+    e.target.value = null;
   };
 
   const removeImage = () => {
+    if (uploading) return;
     setImageFile(null);
     setImagePreview(null);
   };
@@ -105,17 +113,16 @@ function StudentForm_Add({ onClose, onSave }) {
     const { id, firstname, lastname, course, year, gender } = formData;
     const idPattern = /^\d{4}-\d{4}$/;
     const namePattern = /^[A-Za-z\s]+$/;
-    const trimmedFirst = firstname.trim();
-    const trimmedLast = lastname.trim();
 
     if (!id || !idPattern.test(id))
       return "Student ID must follow the format XXXX-XXXX (e.g., 2023-1949).";
-    if (!trimmedFirst)
+    if (!firstname.trim())
       return "First name is required and cannot be only spaces.";
-    if (!namePattern.test(trimmedFirst))
+    if (!namePattern.test(firstname.trim()))
       return "First name can only contain letters and spaces.";
-    if (!trimmedLast) return "Last name is required and cannot be only spaces.";
-    if (!namePattern.test(trimmedLast))
+    if (!lastname.trim())
+      return "Last name is required and cannot be only spaces.";
+    if (!namePattern.test(lastname.trim()))
       return "Last name can only contain letters and spaces.";
     if (!course) return "Please select a program.";
     if (!year) return "Please select a year level.";
@@ -125,14 +132,18 @@ function StudentForm_Add({ onClose, onSave }) {
   };
 
   const handleSubmit = async () => {
+    if (uploading) return;
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
       return;
     }
 
+    setUploading(true);
+    setError("");
+
     try {
-      setUploading(true);
       const newStudent = await addStudent({
         ...formData,
         firstname: formData.firstname.trim(),
@@ -147,20 +158,20 @@ function StudentForm_Add({ onClose, onSave }) {
         }
       }
 
-      if (onSave) onSave(newStudent);
+      if (onSave) await onSave(newStudent);
       onClose();
     } catch (err) {
       console.error("Error adding student:", err);
-      setError("Failed to add student. Please try again.");
+      setError("Failed to add student. Please check the console for details.");
     } finally {
       setUploading(false);
     }
   };
 
-  if (loading || uploading) return <StudentFormSkeleton />;
+  if (loading) return <StudentFormSkeleton />;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
       <div className="bg-white p-6 rounded-lg w-96 border border-gray-300 shadow-md max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-bold mb-4 text-blue-400">Add Student</h2>
 
@@ -177,6 +188,11 @@ function StudentForm_Add({ onClose, onSave }) {
                 src={imagePreview}
                 alt="Preview"
                 className="w-32 h-32 rounded-full object-cover border-4 border-blue-300"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src =
+                    "https://placehold.co/128x128/f3f4f6/a1a1a1?text=Image+Error";
+                }}
               />
             ) : (
               <div className="w-32 h-32 rounded-full bg-gray-200 border-4 border-blue-300 flex items-center justify-center">
@@ -188,17 +204,23 @@ function StudentForm_Add({ onClose, onSave }) {
           {imagePreview ? (
             <button
               onClick={removeImage}
-              className="btn btn-sm bg-gray-400 text-white hover:bg-gray-500"
+              disabled={uploading}
+              className="btn btn-sm bg-gray-400 text-white hover:bg-gray-500 disabled:opacity-50 disabled:pointer-events-none"
             >
               <i className="pi pi-times mr-1"></i>Remove Image
             </button>
           ) : (
-            <label className="btn btn-sm bg-blue-400 text-white hover:bg-blue-500 cursor-pointer">
+            <label
+              className={`btn btn-sm bg-blue-400 text-white hover:bg-blue-500 cursor-pointer transition ${
+                uploading ? "opacity-50 pointer-events-none" : ""
+              }`}
+            >
               <i className="pi pi-upload mr-1"></i>Upload Image
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileSelect}
+                disabled={uploading}
                 className="hidden"
               />
             </label>
@@ -210,32 +232,36 @@ function StudentForm_Add({ onClose, onSave }) {
             type="text"
             name="id"
             placeholder="Student ID (e.g., 2023-1949)"
-            className="input input-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="input input-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.id}
             onChange={handleChange}
+            disabled={uploading}
             maxLength={9}
           />
           <input
             type="text"
             name="firstname"
             placeholder="First Name"
-            className="input input-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="input input-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.firstname}
             onChange={handleChange}
+            disabled={uploading}
           />
           <input
             type="text"
             name="lastname"
             placeholder="Last Name"
-            className="input input-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="input input-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.lastname}
             onChange={handleChange}
+            disabled={uploading}
           />
           <select
             name="course"
-            className="select select-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="select select-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.course}
             onChange={handleChange}
+            disabled={uploading}
           >
             <option value="">Select Program Code</option>
             {programs.map((program) => (
@@ -246,9 +272,10 @@ function StudentForm_Add({ onClose, onSave }) {
           </select>
           <select
             name="year"
-            className="select select-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="select select-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.year}
             onChange={handleChange}
+            disabled={uploading}
           >
             <option value="">Select Year Level</option>
             {[1, 2, 3, 4, 5, 6].map((y) => (
@@ -259,9 +286,10 @@ function StudentForm_Add({ onClose, onSave }) {
           </select>
           <select
             name="gender"
-            className="select select-bordered w-full bg-white text-gray-500 border border-gray-400 disabled:bg-gray-200 disabled:text-gray-400"
+            className="select select-bordered w-full bg-white text-gray-700 border border-gray-400 disabled:opacity-50 disabled:pointer-events-none"
             value={formData.gender}
             onChange={handleChange}
+            disabled={uploading}
           >
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
@@ -271,16 +299,18 @@ function StudentForm_Add({ onClose, onSave }) {
 
         <div className="flex justify-end mt-4 gap-2">
           <button
-            className="btn bg-gray-300 border-none text-white disabled:bg-gray-200 disabled:text-white"
+            className="btn bg-gray-300 text-white hover:bg-gray-400 disabled:opacity-50 disabled:pointer-events-none min-w-[6rem]"
             onClick={onClose}
+            disabled={uploading}
           >
             Cancel
           </button>
           <button
-            className="btn flex items-center justify-center bg-blue-400 text-white border-none hover:bg-blue-500 disabled:bg-blue-300 disabled:text-white"
+            className="btn bg-blue-400 text-white hover:bg-blue-500 disabled:opacity-50 disabled:pointer-events-none min-w-[6rem]"
             onClick={handleSubmit}
+            disabled={uploading}
           >
-            Add
+            {uploading ? "Submitting..." : "Add"}
           </button>
         </div>
       </div>
