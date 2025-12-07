@@ -283,18 +283,16 @@ function StudentTable() {
                   onClick={() => handleRowClick(student.id)}
                 >
                   <td>
-                    <div className="avatar">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                        {student.image_url ? (
-                          <img
-                            src={student.image_url}
-                            alt={`${student.firstname} ${student.lastname}`}
-                            className="object-cover w-full h-full"
-                          />
-                        ) : (
-                          <i className="pi pi-user text-gray-400 w-full h-full text-[2rem] flex items-center justify-center"></i>
-                        )}
-                      </div>
+                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {student.image_url ? (
+                        <img
+                          src={student.image_url}
+                          alt={`${student.firstname} ${student.lastname}`}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <i className="pi pi-user text-gray-400 text-3xl"></i>
+                      )}
                     </div>
                   </td>
                   <td>{student.id}</td>
