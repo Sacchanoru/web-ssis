@@ -38,6 +38,9 @@ function StudentTable() {
     filter_by: "none",
     order: "asc",
     sort_by: "firstname",
+    filter_year: "none",
+    filter_program: "none",
+    filter_gender: "none",
   });
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
@@ -56,7 +59,11 @@ function StudentTable() {
         customFilters.filter_by,
         customFilters.order,
         customFilters.sort_by,
-        currentPage
+        currentPage,
+        10,
+        customFilters.filter_year,
+        customFilters.filter_program,
+        customFilters.filter_gender
       );
       const { data: rows, total_pages } = data;
       const rowsWithTimestamp = rows.map((row) => ({
@@ -98,7 +105,11 @@ function StudentTable() {
         filters.filter_by,
         filters.order,
         filters.sort_by,
-        page
+        page,
+        10,
+        filters.filter_year,
+        filters.filter_program,
+        filters.filter_gender
       );
       const { total_pages } = data;
       const newPage = page > total_pages ? Math.max(1, total_pages) : page;
@@ -135,6 +146,11 @@ function StudentTable() {
     }
   };
 
+  const hasActiveFilters =
+    filters.filter_year !== "none" ||
+    filters.filter_program !== "none" ||
+    filters.filter_gender !== "none";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -155,12 +171,50 @@ function StudentTable() {
         />
 
         <button
-          className="btn btn-outline btn-info"
+          className={`btn ${
+            hasActiveFilters ? "btn-info" : "btn-outline btn-info"
+          }`}
           onClick={() => setShowFilter(true)}
         >
-          <i className="pi pi-filter mr-2"></i>Filter
+          <i className="pi pi-filter mr-2"></i>
+          {hasActiveFilters ? "Filtered" : "Filter"}
         </button>
       </div>
+
+      {/* active filter */}
+      {hasActiveFilters && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-blue-700">
+            <i className="pi pi-filter"></i>
+            <span className="font-medium">Active Filters:</span>
+            {filters.filter_year !== "none" && (
+              <span className="badge badge-info">
+                Year {filters.filter_year}
+              </span>
+            )}
+            {filters.filter_program !== "none" && (
+              <span className="badge badge-info">{filters.filter_program}</span>
+            )}
+            {filters.filter_gender !== "none" && (
+              <span className="badge badge-info">{filters.filter_gender}</span>
+            )}
+          </div>
+          <button
+            className="btn btn-sm btn-ghost text-blue-700"
+            onClick={() => {
+              setFilters({
+                ...filters,
+                filter_year: "none",
+                filter_program: "none",
+                filter_gender: "none",
+              });
+              setPage(1);
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
 
       {showFilter && (
         <StudentForm_Filter

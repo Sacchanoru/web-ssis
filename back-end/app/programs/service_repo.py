@@ -124,3 +124,37 @@ class ProgramService:
         exists = cur.fetchone()[0]
         cur.close()
         return exists
+
+    @staticmethod
+    def get_all_programs_unpaginated(sort_by="code", order="asc"):
+        db = get_db()
+        cur = db.cursor()
+
+        valid_columns = ("code", "name", "college_code")
+        if sort_by not in valid_columns:
+            sort_by = "code"
+        if order.lower() not in ("asc", "desc"):
+            order = "asc"
+
+        sql = f"""
+            SELECT p.code, p.name, p.college_code, c.name AS college_name
+            FROM program p
+            LEFT JOIN college c ON p.college_code = c.code
+            ORDER BY p.{sort_by} {order.upper()}
+        """
+        
+        cur.execute(sql)
+        results = cur.fetchall()
+
+        programs = [
+            {
+                "code": r[0],
+                "name": r[1],
+                "college_code": r[2],
+                "college_name": r[3],
+            }
+            for r in results
+        ]
+
+        cur.close()
+        return programs

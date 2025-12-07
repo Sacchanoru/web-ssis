@@ -52,3 +52,11 @@ class ProgramController:
     def check_program_exists(code: str):
         exists = ProgramService.program_exists(code)
         return jsonify({"exists": exists}), 200
+    
+    @staticmethod
+    def get_all_programs_unpaginated():
+        sort_by = request.args.get("sort_by") or request.args.get("sortBy") or "code"
+        order = request.args.get("order") or request.args.get("sort") or "asc"
+        
+        programs = ProgramService.get_all_programs_unpaginated(sort_by, order)
+        return jsonify(programs), 200

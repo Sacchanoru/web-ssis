@@ -6,7 +6,10 @@ export const getStudents = async (
   order = "asc",
   sort_by = "id",
   page = 1,
-  page_size = 10
+  page_size = 10,
+  filter_year = null,
+  filter_program = null,
+  filter_gender = null
 ) => {
   try {
     const params = new URLSearchParams();
@@ -16,6 +19,13 @@ export const getStudents = async (
     if (sort_by) params.append("sort_by", sort_by);
     if (page) params.append("page", page);
     if (page_size) params.append("page_size", page_size);
+
+    if (filter_year && filter_year !== "none")
+      params.append("filter_year", filter_year);
+    if (filter_program && filter_program !== "none")
+      params.append("filter_program", filter_program);
+    if (filter_gender && filter_gender !== "none")
+      params.append("filter_gender", filter_gender);
 
     const response = await apiClient.get(`/students/?${params.toString()}`);
     return response.data;

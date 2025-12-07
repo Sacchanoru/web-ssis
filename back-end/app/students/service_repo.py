@@ -4,7 +4,8 @@ from app.students.image_service import ImageService
 
 class StudentService:
     @staticmethod
-    def get_all_students(search=None, filter_by="none", sort_by="id", order="asc", page=1, per_page=10):
+    def get_all_students(search=None, filter_by="none", sort_by="id", order="asc", page=1, per_page=10, 
+                         filter_year=None, filter_program=None, filter_gender=None):
         db = get_db()
         cur = db.cursor()
 
@@ -23,29 +24,47 @@ class StudentService:
             LEFT JOIN program p ON s.course = p.code
         """
         params = []
+        where_clauses = []
 
-        # search filters
+        if filter_year and filter_year != "none":
+            where_clauses.append("s.year = %s")
+            params.append(filter_year)
+        
+        if filter_program and filter_program != "none":
+            where_clauses.append("s.course = %s")
+            params.append(filter_program)
+        
+        if filter_gender and filter_gender != "none":
+            where_clauses.append("s.gender = %s")
+            params.append(filter_gender)
+
         if search:
+            search_clauses = []
             if filter_by == "none":
-                sql += """
-                    WHERE s.id ILIKE %s
-                       OR s.firstname ILIKE %s
-                       OR s.lastname ILIKE %s
-                       OR s.course ILIKE %s
-                       OR p.name ILIKE %s
-                       OR s.gender ILIKE %s
-                       OR CAST(s.year AS TEXT) ILIKE %s
-                """
-                params = [f"%{search}%"] * 7
+                search_clauses = [
+                    "s.id ILIKE %s",
+                    "s.firstname ILIKE %s",
+                    "s.lastname ILIKE %s",
+                    "s.course ILIKE %s",
+                    "p.name ILIKE %s",
+                    "s.gender ILIKE %s",
+                    "CAST(s.year AS TEXT) ILIKE %s"
+                ]
+                search_params = [f"%{search}%"] * 7
             elif filter_by == "course":
-                sql += " WHERE s.course ILIKE %s OR p.name ILIKE %s"
-                params = [f"%{search}%", f"%{search}%"]
+                search_clauses = ["s.course ILIKE %s", "p.name ILIKE %s"]
+                search_params = [f"%{search}%", f"%{search}%"]
             elif filter_by == "year":
-                sql += " WHERE CAST(s.year AS TEXT) ILIKE %s"
-                params = [f"%{search}%"]
+                search_clauses = ["CAST(s.year AS TEXT) ILIKE %s"]
+                search_params = [f"%{search}%"]
             else:
-                sql += f" WHERE s.{filter_by} ILIKE %s"
-                params = [f"%{search}%"]
+                search_clauses = [f"s.{filter_by} ILIKE %s"]
+                search_params = [f"%{search}%"]
+            
+            where_clauses.append(f"({' OR '.join(search_clauses)})")
+            params.extend(search_params)
+        if where_clauses:
+            sql += " WHERE " + " AND ".join(where_clauses)
 
         sql += f" ORDER BY s.{sort_by} {order.upper()}"
         print("→ SQL:", cur.mogrify(sql, params).decode())

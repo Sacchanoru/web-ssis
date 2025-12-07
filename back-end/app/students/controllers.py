@@ -9,14 +9,20 @@ class StudentController:
         filter_by = request.args.get("filter_by") or request.args.get("filterBy") or "none"
         sort_by = request.args.get("sort_by") or request.args.get("sortBy") or "id"
         order = request.args.get("order") or request.args.get("sort") or "asc"
-
+        
         # pagination
         page = int(request.args.get("page", 1))
         per_page = int(request.args.get("per_page", 10))
 
+        filter_year = request.args.get("filter_year")
+        filter_program = request.args.get("filter_program")
+        filter_gender = request.args.get("filter_gender")
+
         students = StudentService.get_all_students(
-            search, filter_by, sort_by, order, page, per_page
+            search, filter_by, sort_by, order, page, per_page,
+            filter_year, filter_program, filter_gender 
         )
+
         return jsonify(students), 200
 
     @staticmethod

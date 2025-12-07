@@ -44,3 +44,19 @@ export const programExists = async (code) => {
   const res = await apiClient.get(`/programs/exists/${code}`);
   return res.data.exists;
 };
+
+export const getAllProgramsUnpaginated = async (
+  order = "asc",
+  sort_by = "code"
+) => {
+  try {
+    const params = new URLSearchParams();
+    if (order) params.append("order", order);
+    if (sort_by) params.append("sort_by", sort_by);
+    const response = await apiClient.get(`/programs/all?${params.toString()}`);
+    return response.data;
+  } catch (err) {
+    console.error("Error getting all programs:", err);
+    throw err;
+  }
+};

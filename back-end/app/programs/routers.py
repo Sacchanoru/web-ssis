@@ -33,3 +33,7 @@ def edit_program(code):
 @program_bp.route("/exists/<string:code>", methods=["GET"])
 def check_program_exists(code):
     return ProgramController.check_program_exists(code)
+
+@program_bp.route("/all", methods=["GET"])
+def get_all_programs_unpaginated():
+    return ProgramController.get_all_programs_unpaginated()
