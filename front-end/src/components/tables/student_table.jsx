@@ -136,7 +136,6 @@ function StudentTable() {
 
   const handleCloseDetails = () => {
     setSelectedStudentId(null);
-    fetchData(searchQuery, filters, page);
   };
 
   const handleSearchKeyDown = (e) => {
