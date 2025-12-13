@@ -84,3 +84,35 @@ export const deleteStudentImage = async (id) => {
   const response = await apiClient.delete(`/students/${id}/image`);
   return response.data;
 };
+
+export const getStudentCountByYear = async (year) => {
+  try {
+    const response = await apiClient.get(`/students/count/year/${year}`);
+    return response.data;
+  } catch (err) {
+    console.error("Error getting student count by year:", err);
+    throw err;
+  }
+};
+
+export const getStudentCountByProgram = async (programCode) => {
+  try {
+    const response = await apiClient.get(
+      `/students/count/program/${programCode}`
+    );
+    return response.data;
+  } catch (err) {
+    console.error("Error getting student count by program:", err);
+    throw err;
+  }
+};
+
+export const getStudentCountByGender = async (gender) => {
+  try {
+    const response = await apiClient.get(`/students/count/gender/${gender}`);
+    return response.data;
+  } catch (err) {
+    console.error("Error getting student count by gender:", err);
+    throw err;
+  }
+};

@@ -100,20 +100,11 @@ function StudentTable() {
 
     try {
       await deleteStudent(id);
-      const data = await getStudents(
-        searchQuery,
-        filters.filter_by,
-        filters.order,
-        filters.sort_by,
-        page,
-        10,
-        filters.filter_year,
-        filters.filter_program,
-        filters.filter_gender
-      );
-      const { total_pages } = data;
-      const newPage = page > total_pages ? Math.max(1, total_pages) : page;
-      await fetchData(searchQuery, filters, newPage);
+
+      setPage(1);
+      setSearchQuery("");
+      setSearchInput("");
+      await fetchData("", filters, 1);
     } catch (err) {
       console.error("Error deleting student:", err);
       alert("Something went wrong while deleting.");

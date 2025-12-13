@@ -76,12 +76,30 @@ function ProgramTable() {
       return;
 
     try {
+      setLoading(true);
       await deleteProgram(code);
-      const updatedPage = Math.max(1, Math.min(page, maxPage));
-      await fetchData(searchQuery, filters, updatedPage);
+
+      const newPage = 1;
+      setPage(newPage);
+      setSearchInput("");
+      setSearchQuery("");
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const data = await getPrograms(
+        "",
+        filters.filter_by,
+        filters.order,
+        filters.sort_by,
+        newPage
+      );
+      setPrograms(data.data);
+      setMaxPage(data.total_pages || 1);
     } catch (err) {
       console.error("Error deleting program:", err);
       alert("Something went wrong while deleting.");
+    } finally {
+      setLoading(false);
     }
   };
 

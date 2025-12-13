@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getAllProgramsUnpaginated } from "../../api/program_api";
+import {
+  getStudentCountByYear,
+  getStudentCountByProgram,
+  getStudentCountByGender,
+} from "../../api/student_api";
 
 function StudentForm_Filter({ onClose, onApply, initialFilter }) {
   const [filterBy, setFilterBy] = useState(initialFilter.filter_by || "none");
   const [order, setOrder] = useState(initialFilter.order || "asc");
   const [sortBy, setSortBy] = useState(initialFilter.sort_by || "id");
+  const [programCounts, setProgramCounts] = useState({});
+  const [genderCounts, setGenderCounts] = useState({ Male: 0, Female: 0 });
 
   const [filterYear, setFilterYear] = useState(
     initialFilter.filter_year || "none"
@@ -43,6 +50,76 @@ function StudentForm_Filter({ onClose, onApply, initialFilter }) {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const [yearCounts, setYearCounts] = useState({
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+  });
+
+  useEffect(() => {
+    const fetchYearCounts = async () => {
+      try {
+        const results = await Promise.all([
+          getStudentCountByYear(1),
+          getStudentCountByYear(2),
+          getStudentCountByYear(3),
+          getStudentCountByYear(4),
+          getStudentCountByYear(5),
+          getStudentCountByYear(6),
+        ]);
+
+        setYearCounts({
+          1: results[0].count,
+          2: results[1].count,
+          3: results[2].count,
+          4: results[3].count,
+          5: results[4].count,
+          6: results[5].count,
+        });
+      } catch (err) {
+        console.error("Failed to fetch year counts:", err);
+      }
+    };
+
+    fetchYearCounts();
+  }, []);
+
+  useEffect(() => {
+    const fetchProgramCounts = async () => {
+      try {
+        const counts = {};
+        await Promise.all(
+          programs.map(async (prog) => {
+            const data = await getStudentCountByProgram(prog.code);
+            counts[prog.code] = data.count;
+          })
+        );
+        setProgramCounts(counts);
+      } catch (err) {
+        console.error("Failed to fetch program counts:", err);
+      }
+    };
+
+    if (programs.length > 0) fetchProgramCounts();
+  }, [programs]);
+
+  useEffect(() => {
+    const fetchGenderCounts = async () => {
+      try {
+        const maleData = await getStudentCountByGender("Male");
+        const femaleData = await getStudentCountByGender("Female");
+        setGenderCounts({ Male: maleData.count, Female: femaleData.count });
+      } catch (err) {
+        console.error("Failed to fetch gender counts:", err);
+      }
+    };
+
+    fetchGenderCounts();
   }, []);
 
   const handleApply = () => {
@@ -90,12 +167,12 @@ function StudentForm_Filter({ onClose, onApply, initialFilter }) {
               onChange={(e) => setFilterYear(e.target.value)}
             >
               <option value="none">All Years</option>
-              <option value="1">1st Year</option>
-              <option value="2">2nd Year</option>
-              <option value="3">3rd Year</option>
-              <option value="4">4th Year</option>
-              <option value="5">5th Year</option>
-              <option value="6">6th Year</option>
+              <option value="1">1st Year ({yearCounts[1]})</option>
+              <option value="2">2nd Year ({yearCounts[2]})</option>
+              <option value="3">3rd Year ({yearCounts[3]})</option>
+              <option value="4">4th Year ({yearCounts[4]})</option>
+              <option value="5">5th Year ({yearCounts[5]})</option>
+              <option value="6">6th Year ({yearCounts[6]})</option>
             </select>
           </div>
 
@@ -143,7 +220,11 @@ function StudentForm_Filter({ onClose, onApply, initialFilter }) {
                       setShowProgramDropdown(false);
                     }}
                   >
-                    {prog.code} - {prog.name}
+                    {prog.code} - {prog.name} (
+                    {programCounts[prog.code] !== undefined
+                      ? programCounts[prog.code]
+                      : "..."}
+                    )
                   </div>
                 ))}
               </div>
@@ -161,8 +242,8 @@ function StudentForm_Filter({ onClose, onApply, initialFilter }) {
               onChange={(e) => setFilterGender(e.target.value)}
             >
               <option value="none">All Genders</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
+              <option value="Male">Male ({genderCounts.Male})</option>
+              <option value="Female">Female ({genderCounts.Female})</option>
             </select>
           </div>
         </div>
