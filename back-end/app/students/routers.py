@@ -53,3 +53,18 @@ def get_student_image(student_id):
 def delete_student_image(student_id):
     """Delete student image only"""
     return StudentController.delete_student_image_only(student_id)
+
+@student_bp.route("/count/year/<int:year>", methods=["GET"])
+def get_student_count_year_level(year):
+    """Get amount of students in that year level"""
+    return StudentController.get_student_count_year_level(year)
+
+@student_bp.route("/count/program/<string:program_code>", methods=["GET"])
+def get_student_count_program(program_code):
+    """Get amount of students in that program"""
+    return StudentController.get_student_count_program(program_code)
+
+@student_bp.route("/count/gender/<string:gender>", methods=["GET"])
+def get_student_count_gender(gender):
+    """Get amount of students in that gender"""
+    return StudentController.get_student_count_gender(gender)

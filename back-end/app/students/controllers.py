@@ -124,3 +124,54 @@ class StudentController:
             return jsonify(student), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+    @staticmethod
+    def get_student_count_year_level(year: int):
+        try:
+            if year is None:
+                return jsonify({"error": "Year is required"}), 400
+
+            if not isinstance(year, int):
+                return jsonify({"error": "Year must be an integer"}), 400
+
+            if year < 1 or year > 6:
+                return jsonify({"error": "Year must be between 1 and 6"}), 400
+
+            count = StudentService.get_student_count_year_level(year)
+
+            return jsonify({
+                "year": year,
+                "count": count
+            }), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+        
+    @staticmethod
+    def get_student_count_program(program_code: str = None):
+        try:
+            if not program_code:
+                return jsonify({"error": "Program code is required"}), 400
+
+            count = StudentService.get_student_count_program(program_code)
+            return jsonify({
+                "program_code": program_code,
+                "count": count
+            }), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @staticmethod
+    def get_student_count_gender(gender: str = None):
+        try:
+            if not gender:
+                return jsonify({"error": "Gender is required"}), 400
+
+            count = StudentService.get_student_count_gender(gender)
+            return jsonify({
+                "gender": gender,
+                "count": count
+            }), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+

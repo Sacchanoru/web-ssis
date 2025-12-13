@@ -242,3 +242,50 @@ class StudentService:
         student["image"] = image_record
 
         return student
+    
+    @staticmethod
+    def get_student_count_year_level(year=None):
+        db = get_db()
+        cur = db.cursor()
+
+        sql = """
+            SELECT COUNT(*) FROM student WHERE year = %s
+        """
+
+        cur.execute(sql, (year,))
+        count = cur.fetchone()[0]
+        cur.close()
+
+        return count
+    
+    @staticmethod
+    def get_student_count_program(program_code=None):
+        db = get_db()
+        cur = db.cursor()
+
+        if program_code:
+            sql = "SELECT COUNT(*) FROM student WHERE course = %s"
+            cur.execute(sql, (program_code,))
+        else:
+            sql = "SELECT COUNT(*) FROM student"
+            cur.execute(sql)
+
+        count = cur.fetchone()[0]
+        cur.close()
+        return count
+
+    @staticmethod
+    def get_student_count_gender(gender=None):
+        db = get_db()
+        cur = db.cursor()
+
+        if gender:
+            sql = "SELECT COUNT(*) FROM student WHERE gender = %s"
+            cur.execute(sql, (gender,))
+        else:
+            sql = "SELECT COUNT(*) FROM student"
+            cur.execute(sql)
+
+        count = cur.fetchone()[0]
+        cur.close()
+        return count
