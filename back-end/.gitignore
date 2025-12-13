@@ -1,2 +1,2 @@
 .env
-back-end/dist
+**/dist/
