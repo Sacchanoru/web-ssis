@@ -10,7 +10,7 @@ def create_app():
     base_dir = os.path.dirname(os.path.abspath(__file__))    
     back_end_dir = os.path.dirname(base_dir)               
     project_root = os.path.dirname(back_end_dir)    
-    static_folder = os.path.join(project_root, 'front-end', 'dist')
+    static_folder = os.path.join(project_root, 'back-end', 'dist')
 
     app = Flask(__name__, static_folder=static_folder, static_url_path=None)
 
@@ -18,7 +18,7 @@ def create_app():
     if os.path.exists(static_folder):
         print("Contents:", os.listdir(static_folder))
     else:
-        print("Folder not found! Run `npm run build` in front-end.")
+        print("Folder not found! Run `npm run build` in back-end.")
 
     app.config["DATABASE_URL"] = (
         f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
